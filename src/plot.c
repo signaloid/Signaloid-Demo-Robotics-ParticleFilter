@@ -23,7 +23,7 @@
  */
 
 #include <math.h>
-#include <uncertain.h>
+#include <uxhw.h>
 
 #include "config.h"
 #include "environment.h"
@@ -119,8 +119,8 @@ distribution(FILE * stream, float x, float y, float dist, const char * class)
 	for (i = 0; i < nbBuckets; i++)
 	{
 		boundaries[i + 1] = bucketEnd(i);
-		mass = libUncertainFloatProbabilityGT(dist, boundaries[i]) -
-		       libUncertainFloatProbabilityGT(dist, boundaries[i + 1]);
+		mass = UxHwFloatProbabilityGT(dist, boundaries[i]) -
+		       UxHwFloatProbabilityGT(dist, boundaries[i + 1]);
 		density[i] = mass / (positionMax - positionMin) * nbBuckets;
 		maxDensity = fmax(maxDensity, density[i]);
 	}
@@ -297,8 +297,8 @@ plotFrameAfterBL(FILE * stream, size_t frame, float estimatedPosition, float sen
 	for (i = 0; i < gradientSteps; i++)
 	{
 		boundaries[i + 1] = ((positionMax - positionMin) * (i + 1)) / gradientSteps;
-		mass = libUncertainFloatProbabilityGT(sensorDist, boundaries[i]) -
-		       libUncertainFloatProbabilityGT(sensorDist, boundaries[i + 1]);
+		mass = UxHwFloatProbabilityGT(sensorDist, boundaries[i]) -
+		       UxHwFloatProbabilityGT(sensorDist, boundaries[i + 1]);
 		density[i] = mass / (positionMax - positionMin) * gradientSteps;
 		maxDensity = fmax(maxDensity, density[i]);
 	}

@@ -24,7 +24,7 @@
 
 #include "system.h"
 #include "model.h"
-#include <uncertain.h>
+#include <uxhw.h>
 
 float position = 0;
 
@@ -37,7 +37,7 @@ float
 sensor(float position)
 {
 	float dist = sensorModel(position);
-	return libUncertainFloatSample(dist);
+	return UxHwFloatSample(dist);
 }
 
 float

@@ -24,7 +24,7 @@ The particles get resampled proportionally to the weights and the process repeat
 
 Signaloid's uncertainty tracking helps in two key aspects of the filter.
 1. The particles are implicitly represented using the processor uncertainty tracking.
-2. Bayesian reasoning in [libUncertain](https://libuncertain.signaloid.io/) does the majority's of the filter's work, taking care of the comparison against the sensor readings and resampling.
+2. Bayesian reasoning in [UxHw](https://libuncertain.signaloid.io/) does the majority's of the filter's work, taking care of the comparison against the sensor readings and resampling.
 
 ## 1 Degree of Freedom Robotic System with a Distance Senor
 
@@ -68,21 +68,21 @@ As the Signaloid C0 processor can natively track distributions, we do not need t
 Signaloid C0 is taking care of all that for us.
 For instance, in [`main.c`](src/main.c), the filter is initialized with
 ```c
-estimatedPosition = libUncertainFloatUniformDist(positionMin, positionMax);
+estimatedPosition = UxHwFloatUniformDist(positionMin, positionMax);
 ```
 This tells the processor that we have no information about the system and that every position is equally likely.
 
 In addition, the Signaloid C0 uncertainty representations are a powerful tool to concisely model the sensor.
 In [`model.c`](src/model.c), the `sensorModel` function tells the processor that the sensor is subject to Gaussian noise with:
 ```c
-distanceWithNoise = libUncertainFloatGaussDist(distance, distance * sensorStdCoeff);
+distanceWithNoise = UxHwFloatGaussDist(distance, distance * sensorStdCoeff);
 ```
 This creates a Gaussian distribution around the actual distance with a standard deviation that depends on the distance and a sensor-specific coefficient.
 
 A key step of the algorithm is to update the distribution of the possible state with sensor readings.
-Here, we offload the work to libUncertain to perform Bayesian inferences so this step becomes an one-liner (in [`main.c`](src/main.c)):
+Here, we offload the work to UxHw to perform Bayesian inferences so this step becomes an one-liner (in [`main.c`](src/main.c)):
 ```c
-estimatedPosition = libUncertainFloatBayesLaplace(&sensorModel, estimatedPosition, sensorReading);
+estimatedPosition = UxHwFloatBayesLaplace(&sensorModel, estimatedPosition, sensorReading);
 ```
 where
 * `sensorModel` is a function that models the sensor;

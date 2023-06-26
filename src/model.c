@@ -25,7 +25,7 @@
 #include "model.h"
 #include "environment.h"
 #include <math.h>
-#include <uncertain.h>
+#include <uxhw.h>
 
 float speedExpected = 1;
 
@@ -36,7 +36,7 @@ float sensorStdCoeff = 0.2;
 float
 speedDistribution()
 {
-	return libUncertainFloatGaussDist(speedExpected, speedStd);
+	return UxHwFloatGaussDist(speedExpected, speedStd);
 }
 
 float
@@ -55,7 +55,7 @@ sensorModel(float position)
 	for (size_t i = 0; i < getNumberOfLandmarks(); i++)
 	{
 		distance = fabs(getLandmarkPosition(i) - position);
-		distanceWithNoise = libUncertainFloatGaussDist(distance, distance * sensorStdCoeff);
+		distanceWithNoise = UxHwFloatGaussDist(distance, distance * sensorStdCoeff);
 		closest = fmin(closest, distanceWithNoise);
 	}
 	return closest;

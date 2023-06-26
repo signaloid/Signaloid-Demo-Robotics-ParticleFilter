@@ -24,7 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <uncertain.h>
+#include <uxhw.h>
 
 #include "config.h"
 #include "environment.h"
@@ -53,9 +53,9 @@ main(int argc, char * argv[])
 	/*
 	 *	Initialization
 	 */
-	estimatedPosition = libUncertainFloatUniformDist(positionMin, positionMax);
-	position = libUncertainFloatSample(estimatedPosition);
-	speed = libUncertainFloatSample(libUncertainFloatGaussDist(speedExpected, speedStd));
+	estimatedPosition = UxHwFloatUniformDist(positionMin, positionMax);
+	position = UxHwFloatSample(estimatedPosition);
+	speed = UxHwFloatSample(UxHwFloatGaussDist(speedExpected, speedStd));
 
 	/*
 	 *	Print what does not change
@@ -96,7 +96,7 @@ main(int argc, char * argv[])
 		 *	Apply Bayes-Laplace rule with the new observation to better estimate the
 		 *	state.
 		 */
-		estimatedPosition = libUncertainFloatBayesLaplace(
+		estimatedPosition = UxHwFloatBayesLaplace(
 			&sensorModel,
 			estimatedPosition,
 			sensorReading);
@@ -109,7 +109,7 @@ main(int argc, char * argv[])
 			printf("position: %f\n", position);
 			printf("estimated position: %f\n", estimatedPosition);
 			printf("1st mode of the estimated position: %f\n",
-			       libUncertainFloatNthMode(estimatedPosition, 1));
+			       UxHwFloatNthMode(estimatedPosition, 1));
 		}
 		else
 		{
