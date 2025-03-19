@@ -1,6 +1,5 @@
-[<img src="https://assets.signaloid.io/add-to-signaloid-cloud-logo-dark-v6.png#gh-dark-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Robotics-ParticleFilter#gh-dark-mode-only)
-[<img src="https://assets.signaloid.io/add-to-signaloid-cloud-logo-light-v6.png#gh-light-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Robotics-ParticleFilter#gh-light-mode-only)
-
+[<img src="https://docs/plots.signaloid.io/add-to-signaloid-cloud-logo-dark-latest.png#gh-dark-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Robotics-ParticleFilter#gh-dark-mode-only)
+[<img src="https://docs/plots.signaloid.io/add-to-signaloid-cloud-logo-light-latest.png#gh-light-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Robotics-ParticleFilter#gh-light-mode-only)
 # Particle Filter
 
 This repository contains a 1D [Particle Filter](https://en.wikipedia.org/wiki/Particle_filter) implemented using Signaloid's uncertainty tracking technology.
@@ -24,7 +23,7 @@ The particles get resampled proportionally to the weights and the process repeat
 
 Signaloid's uncertainty tracking helps in two key aspects of the filter.
 1. The particles are implicitly represented using the processor uncertainty tracking.
-2. Bayesian reasoning in [UxHw](https://libuncertain.signaloid.io/) does the majority's of the filter's work, taking care of the comparison against the sensor readings and resampling.
+2. Bayesian reasoning in [UxHw library](https://docs.signaloid.io/docs/hardware-api/) does the majority's of the filter's work, taking care of the comparison against the sensor readings and resampling.
 
 ## 1 Degree of Freedom Robotic System with a Distance Senor
 
@@ -37,7 +36,7 @@ The sensor returns the distance of the closest landmark but does not indicate if
 
 Here is a visual representation of the system.
 
-![Model of the system](resources/system.svg)
+![Model of the system](docs/img/system.svg)
 
 The robot does not know its initial position and moves at a constant speed.
 It does not know the exact speed, only the distribution from which the speed is drawn.
@@ -48,14 +47,14 @@ Furthermore, the measurements of the sensor are subject to additive Gaussian noi
 
 
 Running this program on [signaloid.io](https://signaloid.io/) produces a textual output by default.
-It is possible to produce an SVG image instead using the option `-p`.
+It is possible to produce an SVG image instead using the option `-o`.
 
 Here an example output image with some annotation to explain all the elements.
 
 First, we show the actual speed of the robot and the speed distribution used by the filter.
 Then, we show each time step.
 
-![Sample output](resources/sample_output.svg)
+![Sample output](docs/img/sample_output.svg)
 
 The output also shows the mode of distribution.
 The mode is the maximum of the density.
@@ -82,47 +81,34 @@ This creates a Gaussian distribution around the actual distance with a standard 
 A key step of the algorithm is to update the distribution of the possible state with sensor readings.
 Here, we offload the work to UxHw to perform Bayesian inferences so this step becomes an one-liner (in [`main.c`](src/main.c)):
 ```c
-estimatedPosition = UxHwFloatBayesLaplace(&sensorModel, estimatedPosition, sensorReading);
+estimatedPosition = UxHwFloatBayesLaplace(
+			&sensorModelEvidence,
+			(void *)(&sensorModelArgs),
+			estimatedPosition,
+			sensorReading);
 ```
 where
-* `sensorModel` is a function that models the sensor;
-* `estimatedPosition` is the variable with an associated distribution containing the state of the filter;
+* `sensorModelEvidence` is a function that models the sensor.
+* `sensorModelArgs` The rest of the arguments that `sensorModelEvidence` function requires.
+* `estimatedPosition` is the variable with an associated distribution containing the state of the filter.
 * `sensorReading` is the value returned by the sensor.
 
 
-## Options
-
-You can play with this example by modifying the different parts:
-* the distribution for the speed,
-* the number and positions of landmarks,
-* the sensor noise,
-* and others.
-
-Here are the options that you can set using the command line arguments:
-
+## Usage
 ```
-Option summary
-	[-h] [-k int] [-l float] [-a float] [-i float] [-e float] [-s float] [-c float]
+Example: Particle Filter - Signaloid version
 
-Option details:
-
-	-h: print this help message and exit
-
-	-k int: maximum number of steps (default: 5)
-
-	-l float: add a Landmark at the given position
-
-	-a float: mAximal position (default: 10)
-
-	-i float: mInimal position (default: -10)
-
-	-e float: Exepcted speed (default: 1)
-
-	-s float: speed Standard deviation (default: 1)
-
-	-c float: sensor standard deviation Coefficient (default: 0.2)
-
-	-p: output an SVG image instead of text
+Usage: Valid command-line arguments are:
+	[-i, --input <Path to the landmarks input file : str>] (Read landmarks from file.)
+	[-o, --output <Path to the SVG output file : str>] (Specify the svg output file.)
+	[-S, --select-output <output : int>] (Compute 0-indexed output, by default 0.)
+	[-h, --help] (Display this help message.)
+	[-k, --max-number-of-steps <Maximum number of steps to execute : int> (Default: 5)]
+	[-p, --position-min <Min position in X-axis : float> (Default: -10.000000)]
+	[-P, --position-max <Max position in X-axis: float> (Default: 10.000000)]
+	[-e, --expected-speed <The expected speed of the model: float> (Default: 1.000000)]
+	[-s, --speed-standard-deviation <The standard deviaton of the speed of the model : float> (Default: 0.500000)]
+	[-c, --sensor-coefficient <The standard deviaton coefficient of the speed of the model : float> (Default: 0.200000)]
 ```
 
 When no landmark is given, by default the code places a landmark in the middle of the allowed positions.

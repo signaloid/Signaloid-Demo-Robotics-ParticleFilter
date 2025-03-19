@@ -1,7 +1,5 @@
 /*
- *	Authored 2022, Damien Zufferey.
- *
- *	Copyright (c) 2022, Signaloid.
+ *	Copyright (c) 2024, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -27,36 +25,31 @@
 #include <math.h>
 #include <uxhw.h>
 
-float speedExpected = 1;
-
-float speedStd = 0.5;
-
-float sensorStdCoeff = 0.2;
-
 float
-speedDistribution()
+speedDistribution(Model *  model)
 {
-	return UxHwFloatGaussDist(speedExpected, speedStd);
+	return UxHwFloatGaussDist(model->speedExpected, model->speedStd);
 }
 
 float
-moveModel(float position)
+moveModel(Model *  model, float position)
 {
-	return position + speedDistribution();
+	return position + speedDistribution(model);
 }
 
 float
-sensorModel(float position)
+sensorModel(Model *  model, Environment *  env, float position)
 {
-	float closest = INFINITY;
-	float distance;
-	float distanceWithNoise;
+	float			closest = INFINITY;
+	float			distance;
+	float			distanceWithNoise;
 
-	for (size_t i = 0; i < getNumberOfLandmarks(); i++)
+	for (size_t i = 0; i < getNumberOfLandmarks(env); i++)
 	{
-		distance = fabs(getLandmarkPosition(i) - position);
-		distanceWithNoise = UxHwFloatGaussDist(distance, distance * sensorStdCoeff);
+		distance = fabs(getLandmarkPosition(env, i) - position);
+		distanceWithNoise = UxHwFloatGaussDist(distance, distance * model->sensorStdCoeff);
 		closest = fmin(closest, distanceWithNoise);
 	}
+
 	return closest;
 }

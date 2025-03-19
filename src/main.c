@@ -1,7 +1,5 @@
 /*
- *	Authored 2022, Damien Zufferey.
- *
- *	Copyright (c) 2022, Signaloid.
+ *	Copyright (c) 2024, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +24,7 @@
 #include <stdlib.h>
 #include <uxhw.h>
 
-#include "config.h"
+#include "utilities.h"
 #include "environment.h"
 #include "model.h"
 #include "plot.h"
@@ -35,104 +33,180 @@
 int
 main(int argc, char * argv[])
 {
-	size_t i;
-	/*
-	 *	Estimation of the state (distribution)
-	 */
-	float estimatedPosition;
-	/*
-	 *	Count the iteration for printing
-	 */
-	size_t steps = 0;
+	CommandLineArguments			arguments = {0};
+	Environment				env = {0};
+	Model					model = {0};
+	System					system = {0};
+	SensorModelEvidenceArgumentType		sensorModelArgs;
+	FILE *					inputFile;
+	FILE *					outputFile;
+	bool					svgMode = false;
 
 	/*
-	 *	User supplied configuration
+	 *	Estimation of the state (distribution).
 	 */
-	parseArguments(argc, argv);
+	float			estimatedPosition;
+	/*
+	 *	Count the iteration for printing.
+	 */
+	size_t			steps = 0;
 
 	/*
-	 *	Initialization
+	 *	User supplied configuration.
 	 */
-	estimatedPosition = UxHwFloatUniformDist(positionMin, positionMax);
-	position = UxHwFloatSample(estimatedPosition);
-	speed = UxHwFloatSample(UxHwFloatGaussDist(speedExpected, speedStd));
-
-	/*
-	 *	Print what does not change
-	 */
-	if (!plot)
+	if (getCommandLineArguments(argc, argv, &arguments) != kCommonConstantReturnTypeSuccess)
 	{
-		printf("Speed: %f\n", speed);
-		for (i = 0; i < getNumberOfLandmarks(); i++)
+		return 1;
+	}
+
+	/*
+	 *	Read landmark positions from the input file.
+	 */
+	if (arguments.common.isInputFromFileEnabled)
+	{
+		inputFile = fopen(arguments.common.inputFilePath, "r");
+		if (inputFile == NULL)
 		{
-			printf("Landmark at %f\n", getLandmarkPosition(i));
+			fprintf(stderr, "Could not open %s\n", arguments.common.inputFilePath);
+
+			return 1;
+		}
+
+		readLandmarkPositionsFromInputFile(inputFile, &env);
+
+		fclose(inputFile);
+	}
+
+	/*
+	 *	If the output file is specified, open it and redirect output to the output file.
+	 *	Enables SVG-mode.
+	 */
+	if (arguments.common.isWriteToFileEnabled)
+	{
+		outputFile = fopen(arguments.common.outputFilePath, "w");
+		if (outputFile == NULL)
+		{
+			fprintf(stderr, "Could not open %s\n", arguments.common.outputFilePath);
+
+			return 1;
+		}
+		svgMode = true;
+	}
+
+	/*
+	 *	Initializations
+	 */
+	model.speedStd = arguments.speedStd;
+	model.speedExpected = arguments.speedExpected;
+	model.sensorStdCoeff = arguments.sensorStdCoeff;
+
+	env.positionMin = arguments.positionMin;
+	env.positionMax = arguments.positionMax;
+
+	estimatedPosition = UxHwFloatUniformDist(env.positionMin, env.positionMax);
+	system.position = UxHwFloatSample(estimatedPosition);
+	system.speed = UxHwFloatSample(UxHwFloatGaussDist(model.speedExpected, model.speedStd));
+
+	/*
+	 *	If no landmark was read, specify a landmark position in the middle of the allowed positions.
+	 */
+	if (env.landmarkNumber == 0)
+	{
+		addLandmark(&env, (env.positionMin + env.positionMax) / 2);
+	}
+
+	/*
+	 *	Print what does not change.
+	 */
+	if (!svgMode)
+	{
+		printf("Speed: %f\n", system.speed);
+		for (size_t i = 0; i < getNumberOfLandmarks(&env); i++)
+		{
+			printf("Landmark at %f\n", getLandmarkPosition(&env, i));
 		}
 	}
 	else
 	{
-		plotHeader(stdout);
+		plotHeader(outputFile, &env, &model, &system);
 	}
 
-	while (position > positionMin && position < positionMax && steps < maxFilterSteps)
+	/*
+	 *	Main computational loop
+	 */
+	while (	(system.position > env.positionMin) &&
+		(system.position < env.positionMax) &&
+		(steps < arguments.maxNumberOfSteps))
 	{
+		float sensorReading;
+
 		/*
-		 *	Print the system and filter state
+		 *	Print the system and filter state.
 		 */
-		if (!plot)
+		if (!svgMode)
 		{
-			printf("\n# Step %u\n", steps);
+			printf("\n# Step %zu\n", steps);
 			printf("position's prior: %f\n", estimatedPosition);
 		}
 		else
 		{
-			plotFrameBeforeBL(stdout, steps, estimatedPosition);
+			plotFrameBeforeBL(outputFile, &env, &system, steps, estimatedPosition);
 		}
 
 		/*
-		 *	Get a reading from the sensor
+		 *	Get a reading from the sensor.
 		 */
-		float sensorReading = sense();
-		/*
-		 *	Apply Bayes-Laplace rule with the new observation to better estimate the
-		 *	state.
-		 */
-		estimatedPosition = UxHwFloatBayesLaplace(
-			&sensorModel,
-			estimatedPosition,
-			sensorReading);
+		sensorReading = sense(&system, &model, &env);
 
 		/*
-		 *	Print the system and filter state
+		 *	Apply Bayes-Laplace rule with the new observation to better estimate the state.
 		 */
-		if (!plot)
+		sensorModelArgs.m = &model;
+		sensorModelArgs.env = &env;
+		estimatedPosition = UxHwFloatBayesLaplace(
+			&sensorModelEvidence,
+			(void *)(&sensorModelArgs),
+			estimatedPosition,
+			sensorReading,
+			1);
+
+		/*
+		 *	Print the system and filter state.
+		 */
+		if (!svgMode)
 		{
-			printf("position: %f\n", position);
+			printf("position: %f\n", system.position);
 			printf("estimated position: %f\n", estimatedPosition);
-			printf("1st mode of the estimated position: %f\n",
-			       UxHwFloatNthMode(estimatedPosition, 1));
+			printf("1st moment of the estimated position: %f\n",
+			       UxHwFloatNthMoment(estimatedPosition, 1));
 		}
 		else
 		{
-			plotFrameAfterBL(stdout, steps, estimatedPosition, sensorReading);
+			plotFrameAfterBL(outputFile, &env, &model, &system, steps, estimatedPosition, sensorReading);
 		}
 
 		/*
-		 *	Update the system's position by simulating the motion
+		 *	Update the system's position by simulating the motion.
 		 */
-		move();
+		move(&system);
 
 		/*
-		 *	Update the estimated position using a model of the system's motion
+		 *	Update the estimated position using a model of the system's motion.
 		 */
-		estimatedPosition = moveModel(estimatedPosition);
+		estimatedPosition = moveModel(&model, estimatedPosition);
 
 		steps++;
 	}
 
-	if (plot)
+	if (svgMode)
 	{
-		plotFooter(stdout);
+		plotFooter(outputFile);
 	}
 
-	return EXIT_SUCCESS;
+	if (arguments.common.isWriteToFileEnabled)
+	{
+		fclose(outputFile);
+	}
+
+	return 0;
 }

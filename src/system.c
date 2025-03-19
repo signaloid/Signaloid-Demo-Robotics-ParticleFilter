@@ -1,7 +1,5 @@
 /*
- *	Authored 2022, Damien Zufferey.
- *
- *	Copyright (c) 2022, Signaloid.
+ *	Copyright (c) 2024, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -26,34 +24,21 @@
 #include "model.h"
 #include <uxhw.h>
 
-float position = 0;
-
-float speed = 1;
-
 /*
  *	To make sure the sensor model agrees with the sensor, simply sample from the model
  */
 float
-sensor(float position)
+sense(System *  system, Model *  model, Environment *  env)
 {
-	float dist = sensorModel(position);
+	float dist = sensorModel(model, env, system->position);
+
 	return UxHwFloatSample(dist);
 }
 
-float
-sense()
-{
-	return sensor(position);
-}
-
-float
-motion(float position)
-{
-	return position + speed;
-}
-
 void
-move()
+move(System *  system)
 {
-	position = motion(position);
+	system->position += system->speed;
+
+	return;
 }

@@ -1,7 +1,5 @@
 /*
- *	Authored 2022, Damien Zufferey.
- *
- *	Copyright (c) 2022, Signaloid.
+ *	Copyright (c) 2024, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -21,34 +19,33 @@
  *	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *	SOFTWARE.
  */
+
 #pragma once
 
 #include <stdlib.h>
+#include "datatypes.h"
 
-/*
- *	Minimal possible position
+/**
+ *	@brief	Gets the Number of landmarks in the environment
+ *
+ *	@param	env	: The pointer to the environment
+ *	@return size_t	: Returns the number of landmarks in the environment
  */
-extern float positionMin;
+size_t	getNumberOfLandmarks(Environment *  env);
 
-/*
- *	Maximal possible position
+/**
+ *	@brief	Add new landmarks to the environment
+ *
+ *	@param	env		: The pointer to the environment
+ *	@param	position	: The position of the new landmark to add
  */
-extern float positionMax;
+void	addLandmark(Environment *  env, float position);
 
-/*
- *	Number of landmarks
+/**
+ *	@brief	Get a landmark's position (what the sensor picks up)
+ *
+ *	@param	env	: The pointer to the environment
+ *	@param	index	: The index of the landmark
+ *	@return float	: Returns the position of the specified landmark
  */
-size_t
-getNumberOfLandmarks();
-
-/*
- *	Add a new landmarks
- */
-void
-addLandmark(float position);
-
-/*
- *	Get a landmark's position (what the sensor pick-up)
- */
-float
-getLandmarkPosition(size_t index);
+float	getLandmarkPosition(Environment *  env, size_t index);

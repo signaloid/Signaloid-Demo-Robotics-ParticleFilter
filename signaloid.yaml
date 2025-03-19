@@ -1,0 +1,9 @@
+MinimumCore:
+    Microarchitecture: Athens
+    CorrelationTracking: Autocorrelation
+    MemorySize: 256000
+
+TraceVariables:
+    - File: "main.c"
+      LineNumber: 48
+      Expression: "estimatedPosition"

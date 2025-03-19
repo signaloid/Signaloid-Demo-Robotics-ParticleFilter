@@ -1,7 +1,5 @@
 /*
- *	Authored 2022, Damien Zufferey.
- *
- *	Copyright (c) 2022, Signaloid.
+ *	Copyright (c) 2024, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -23,41 +21,43 @@
  */
 
 #include "environment.h"
+#include <stdio.h>
+#include <math.h>
 #include "assert.h"
 
-typedef enum
-{
-	kMaxLandmarks = 128,
-} EnvironmentConstants;
-
-float positionMin = -10;
-
-float positionMax = 10;
-
-size_t landmarkNumber = 0;
-
-/*
- *	To keep the code simple, statically allocate the memory for kMaxLandmarks
- */
-float landmarkPositions[kMaxLandmarks];
-
 size_t
-getNumberOfLandmarks()
+getNumberOfLandmarks(Environment *  env)
 {
-	return landmarkNumber;
+	return env->landmarkNumber;
 }
 
 void
-addLandmark(float position)
+addLandmark(Environment *  env, float position)
 {
-	assert(landmarkNumber < kMaxLandmarks - 1);
-	landmarkPositions[landmarkNumber] = position;
-	landmarkNumber++;
+	if (env->landmarkNumber >= kEnvironmentConstantMaxLandmarks - 1)
+	{
+		fprintf(stderr, " [Warning] addLandmark: landmarkNumber >= kEnvironmentConstantMaxLandmarks - 1. Landmark will not be added\n");
+
+		return;
+	}
+
+	env->landmarkPositions[env->landmarkNumber] = position;
+	env->landmarkNumber++;
+
+	return;
 }
 
 float
-getLandmarkPosition(size_t index)
+getLandmarkPosition(Environment *  env, size_t index)
 {
-	assert(index < landmarkNumber);
-	return landmarkPositions[index];
+	if (index < env->landmarkNumber)
+	{
+		return env->landmarkPositions[index];
+	}
+	else
+	{
+		fprintf(stderr, " [Warning] getLandmarkPosition: Index provided >= landmark number. Returning NAN...\n");
+
+		return NAN;
+	}
 }

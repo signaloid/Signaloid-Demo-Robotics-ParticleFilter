@@ -1,7 +1,5 @@
 /*
- *	Authored 2022, Damien Zufferey.
- *
- *	Copyright (c) 2022, Signaloid.
+ *	Copyright (c) 2024, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -21,39 +19,34 @@
  *	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *	SOFTWARE.
  */
+
 #pragma once
 
-/*
- *	The expected value for the speed
- */
-extern float speedExpected;
+#include "datatypes.h"
 
-/*
- *	The standard deviation for the speed
+/**
+ *	@brief	Returns the distribution of the system's speed.
+ *
+ *	@param	model	: The pointer to the model
+ *	@return float	: The speed distribution
  */
-extern float speedStd;
+float	speedDistribution(Model *  model);
 
-/*
- *	The standard deviation of the sensor noise depends on the position.
- *	There is more noise on the readings of landmarks further away.
+/**
+ *	@brief	Sensor model for the Bayes-Laplace rule.
+ *
+ *
+ *	@param	model		: The pointer to the model
+ *	@param	position	: The current position
+ *	@return float		: Returns N(position, sensorStdCoeff * position).
  */
-extern float sensorStdCoeff;
+float	sensorModel(Model *  model, Environment *  env, float position);
 
-/*
- *	Returns the distribution of the system's speed.
+/**
+ *	@brief	Model of the motion used by the filter
+ *
+ *	@param	model		: The pointer to the model
+ *	@param	position	: The current position
+ *	@return float		: Returns the new position after applying the speedDistribution
  */
-float
-speedDistribution();
-
-/*
- *	Sensor model for the Bayes-Laplace rule.
- *	The sensor model returns: N(position, sensorStdCoeff*position).
- */
-float
-sensorModel(float position);
-
-/*
- *	Model of the motion used by the filter
- */
-float
-moveModel(float position);
+float	moveModel(Model *  model, float position);

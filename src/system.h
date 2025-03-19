@@ -1,7 +1,5 @@
 /*
- *	Authored 2022, Damien Zufferey.
- *
- *	Copyright (c) 2022, Signaloid.
+ *	Copyright (c) 2024, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -21,38 +19,25 @@
  *	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *	SOFTWARE.
  */
+
 #pragma once
 
-/*
- *	State of the system (particle)
- */
-extern float position;
+#include "datatypes.h"
 
-/*
- *	The actual speed.
+/**
+ *	@brief	Sensor reading at the current position
+ *
+ *	@param	system	: Pointer to the system struct
+ *	@param	model	: Pointer to the sensor model struct
+ *	@param	env	: Pointer to the environment struct
+ *	@return float	: The sample read from the sensor
  */
-extern float speed;
+float	sense(System *  system, Model *  model, Environment *  env);
 
-/*
- *	Simulates readings (particle) from the sensors
+/**
+ *	@brief	Simluates the motion of the system (updates the position)
+ *
+ *	@param	system	: Pointer to the system struct
  */
-float
-sensor(float position);
+void	move(System *  system);
 
-/*
- *	Sensor reading at the current position
- */
-float
-sense();
-
-/*
- *	Simluates the dynamic of the system
- */
-float
-motion(float position);
-
-/*
- *	Simluates the motion (update the position)
- */
-void
-move();

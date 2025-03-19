@@ -1,7 +1,5 @@
 /*
- *	Authored 2022, Damien Zufferey.
- *
- *	Copyright (c) 2022, Signaloid.
+ *	Copyright (c) 2024, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -27,14 +25,55 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void
-plotHeader(FILE * stream);
+/**
+ *	@brief	Generate and plot the SVG header.
+ *
+ *	@param	stream	: The file pointer where the element will be printed.
+ *	@param	env	: The pointer to the environment.
+ *	@param	model	: The pointer to the model.
+ *	@param	system	: The pointer to the system.
+ */
+void	plotHeader(FILE * stream, Environment *  env, Model *  model, System *  system);
 
-void
-plotFrameBeforeBL(FILE * stream, size_t frame, float priorPosition);
+/**
+ *	@brief	Generate and plot an SVG frame before the Bayesian Localization.
+ *
+ *	@param	stream		: The file pointer where the element will be printed.
+ *	@param	env		: The pointer to the environment.
+ *	@param	system		: The pointer to the system.
+ *	@param	frame		: The frame index.
+ *	@param	priorPosition	: The car's position.
+ */
+void	plotFrameBeforeBL(
+		FILE *		stream,
+		Environment *	env,
+		System *	system,
+		size_t 		frame,
+		float		priorPosition);
 
-void
-plotFrameAfterBL(FILE * stream, size_t frame, float estimatedPosition, float sensorReading);
+/**
+ *	@brief	Generate and plot an SVG frame after the Bayesian Localization.
+ *
+ *	@param	stream			: The file pointer where the element will be printed.
+ *	@param	env			: The pointer to the environment.
+ *	@param	model			: The pointer to the model.
+ *	@param	system			: The pointer to the system.
+ *	@param	frame			: The frame index.
+ *	@param	estimatedPosition	: The estimated car's position.
+ *	@param	sensorReading		: The sensor reading.
+ */
+void	plotFrameAfterBL(
+		FILE *		stream,
+		Environment *	env,
+		Model *		model,
+		System *	system,
+		size_t		frame,
+		float		estimatedPosition,
+		float 		sensorReading);
 
-void
-plotFooter(FILE * stream);
+/**
+ *	@brief	Generate and plot the SVG footer.
+ *
+ *	@param	stream	: The file pointer where the element will be printed.
+ */
+void	plotFooter(FILE * stream);
