@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2022-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,8 @@
  *	@param	model	: The pointer to the model.
  *	@param	system	: The pointer to the system.
  */
-void	plotHeader(FILE * stream, Environment *  env, Model *  model, System *  system);
+void
+plotHeader(FILE * stream, Environment *  env, Model *  model, System *  system);
 
 /**
  *	@brief	Generate and plot an SVG frame before the Bayesian Localization.
@@ -44,12 +45,13 @@ void	plotHeader(FILE * stream, Environment *  env, Model *  model, System *  sys
  *	@param	frame		: The frame index.
  *	@param	priorPosition	: The car's position.
  */
-void	plotFrameBeforeBL(
-		FILE *		stream,
-		Environment *	env,
-		System *	system,
-		size_t 		frame,
-		float		priorPosition);
+void
+plotFrameBeforeBL(
+	FILE *          stream,
+	Environment *   env,
+	System *        system,
+	size_t          frame,
+	float           priorPosition);
 
 /**
  *	@brief	Generate and plot an SVG frame after the Bayesian Localization.
@@ -62,18 +64,20 @@ void	plotFrameBeforeBL(
  *	@param	estimatedPosition	: The estimated car's position.
  *	@param	sensorReading		: The sensor reading.
  */
-void	plotFrameAfterBL(
-		FILE *		stream,
-		Environment *	env,
-		Model *		model,
-		System *	system,
-		size_t		frame,
-		float		estimatedPosition,
-		float 		sensorReading);
+void
+plotFrameAfterBL(
+	FILE *          stream,
+	Environment *   env,
+	Model *         model,
+	System *        system,
+	size_t          frame,
+	float           estimatedPosition,
+	float           sensorReading);
 
 /**
  *	@brief	Generate and plot the SVG footer.
  *
  *	@param	stream	: The file pointer where the element will be printed.
  */
-void	plotFooter(FILE * stream);
+void
+plotFooter(FILE * stream);

@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2022-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -21,23 +21,26 @@
  */
 
 #include "environment.h"
-#include <stdio.h>
 #include <math.h>
-#include "assert.h"
 
+/*
+ *	This file is part of the kernel's dependencies, so it is compiled into
+ *	bare-metal builds -- the Signaloid SoC application that runs the filter on a
+ *	C0 compute module, among them -- which have no stderr to write to. The two
+ *	out-of-range cases below are therefore handled silently, by refusing the
+ *	landmark and by returning NaN respectively, rather than diagnosed.
+ */
 size_t
-getNumberOfLandmarks(Environment *  env)
+getNumberOfLandmarks(Environment * env)
 {
 	return env->landmarkNumber;
 }
 
 void
-addLandmark(Environment *  env, float position)
+addLandmark(Environment * env, float position)
 {
 	if (env->landmarkNumber >= kEnvironmentConstantMaxLandmarks - 1)
 	{
-		fprintf(stderr, " [Warning] addLandmark: landmarkNumber >= kEnvironmentConstantMaxLandmarks - 1. Landmark will not be added\n");
-
 		return;
 	}
 
@@ -48,16 +51,12 @@ addLandmark(Environment *  env, float position)
 }
 
 float
-getLandmarkPosition(Environment *  env, size_t index)
+getLandmarkPosition(Environment * env, size_t index)
 {
 	if (index < env->landmarkNumber)
 	{
 		return env->landmarkPositions[index];
 	}
-	else
-	{
-		fprintf(stderr, " [Warning] getLandmarkPosition: Index provided >= landmark number. Returning NAN...\n");
 
-		return NAN;
-	}
+	return NAN;
 }

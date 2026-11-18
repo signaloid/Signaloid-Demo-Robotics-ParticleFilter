@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2022-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -20,193 +20,266 @@
  *	SOFTWARE.
  */
 
+#include <inttypes.h>
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include <uxhw.h>
 
+#include "kernel.h"
 #include "utilities.h"
-#include "environment.h"
-#include "model.h"
-#include "plot.h"
-#include "system.h"
+
+#ifdef NO_OS_AVAILABLE
+
+void
+returnZeroNoOS(void);
+#endif
 
 int
-main(int argc, char * argv[])
+main(int argc, char *  argv[])
 {
-	CommandLineArguments			arguments = {0};
-	Environment				env = {0};
-	Model					model = {0};
-	System					system = {0};
-	SensorModelEvidenceArgumentType		sensorModelArgs;
-	FILE *					inputFile;
-	FILE *					outputFile;
-	bool					svgMode = false;
+	CommandLineArguments        arguments   = { 0 };
+	ParticleFilterTrace         trace       = { 0 };
+
+	double *                    monteCarloOutputSamples = NULL;
+	clock_t                     start = 0;
+	clock_t                     end;
+	clock_t                     cpuTimeInClockTicks = 0;
+	double                      outputVariables[kParticleFilterOutputVariableIndexMax] = { 0 };
+	const char *                outputVariableNames[kParticleFilterOutputVariableIndexMax] = {
+		"Estimated Position"
+	};
+	const char *                outputVariableDescriptions[kParticleFilterOutputVariableIndexMax] = {
+		"Estimated position of the robot along the rail, after the last filter step."
+	};
+	kOutputVariableTypeIndex    outputVariableTypes[kParticleFilterOutputVariableIndexMax] = {
+		kOutputVariableTypeDistribution
+	};
+	const char *                applicationDescription = "Robotics: 1D Particle Filter";
+	MeanAndVariance             meanAndVariance;
 
 	/*
-	 *	Estimation of the state (distribution).
-	 */
-	float			estimatedPosition;
-	/*
-	 *	Count the iteration for printing.
-	 */
-	size_t			steps = 0;
-
-	/*
-	 *	User supplied configuration.
+	 *	Get command line arguments.
 	 */
 	if (getCommandLineArguments(argc, argv, &arguments) != kCommonConstantReturnTypeSuccess)
 	{
-		return 1;
+		return kCommonConstantReturnTypeError;
 	}
 
+#ifndef NO_OS_AVAILABLE
+
 	/*
-	 *	Read landmark positions from the input file.
+	 *	Read landmark positions from the input file into the kernel
+	 *	parameters, if one was given. This happens before timing starts, so
+	 *	the timed region excludes file I/O. With no input file the kernel
+	 *	places a single landmark in the middle of the allowed positions.
 	 */
 	if (arguments.common.isInputFromFileEnabled)
 	{
-		inputFile = fopen(arguments.common.inputFilePath, "r");
+		FILE * inputFile = fopen(arguments.common.inputFilePath, "r");
+
 		if (inputFile == NULL)
 		{
-			fprintf(stderr, "Could not open %s\n", arguments.common.inputFilePath);
+			fprintf(stderr, "Error: Could not open %s\n", arguments.common.inputFilePath);
 
-			return 1;
+			return kCommonConstantReturnTypeError;
 		}
 
-		readLandmarkPositionsFromInputFile(inputFile, &env);
-
+		readLandmarkPositionsFromInputFile(inputFile, &arguments.kernelParameters);
 		fclose(inputFile);
 	}
 
 	/*
-	 *	If the output file is specified, open it and redirect output to the output file.
-	 *	Enables SVG-mode.
+	 *	The SVG rendering replays what the kernel recorded, so the trace is
+	 *	only allocated when an SVG was asked for.
 	 */
-	if (arguments.common.isWriteToFileEnabled)
+	if (arguments.svgOutputFilePath != NULL)
 	{
-		outputFile = fopen(arguments.common.outputFilePath, "w");
-		if (outputFile == NULL)
-		{
-			fprintf(stderr, "Could not open %s\n", arguments.common.outputFilePath);
+		trace.capacity  = arguments.kernelParameters.maxNumberOfSteps;
+		trace.count     = 0;
+		trace.steps     = (ParticleFilterTraceStep *) checkedMalloc(
+			(trace.capacity > 0 ? trace.capacity : 1) * sizeof(ParticleFilterTraceStep),
+			__FILE__,
+			__LINE__
+		);
+		arguments.kernelParameters.trace = &trace;
+	}
+#endif
 
-			return 1;
-		}
-		svgMode = true;
+	/*
+	 *	The drawn start, for anyone who wants the demo's original behaviour.
+	 *	These are the only two `UxHwFloatSample()` calls outside the kernel,
+	 *	and they are what makes such a run irreproducible.
+	 */
+	if (arguments.sampleInitialState)
+	{
+		arguments.kernelParameters.truePosition = UxHwFloatSample(
+			UxHwFloatUniformDist(arguments.kernelParameters.positionMin, arguments.kernelParameters.positionMax)
+		);
+		arguments.kernelParameters.trueSpeed = UxHwFloatSample(
+			UxHwFloatGaussDist(arguments.kernelParameters.speedExpected, arguments.kernelParameters.speedStd)
+		);
 	}
 
 	/*
-	 *	Initializations
+	 *	MonteCarlo output samples are used even in the UxHw use case to store
+	 *	the result of the single distributional evaluation.
 	 */
-	model.speedStd = arguments.speedStd;
-	model.speedExpected = arguments.speedExpected;
-	model.sensorStdCoeff = arguments.sensorStdCoeff;
-
-	env.positionMin = arguments.positionMin;
-	env.positionMax = arguments.positionMax;
-
-	estimatedPosition = UxHwFloatUniformDist(env.positionMin, env.positionMax);
-	system.position = UxHwFloatSample(estimatedPosition);
-	system.speed = UxHwFloatSample(UxHwFloatGaussDist(model.speedExpected, model.speedStd));
+	monteCarloOutputSamples = (double *) checkedMalloc(
+		(arguments.common.numberOfMonteCarloIterations > 0 ? arguments.common.numberOfMonteCarloIterations : 1) * sizeof(double),
+		__FILE__,
+		__LINE__
+	);
 
 	/*
-	 *	If no landmark was read, specify a landmark position in the middle of the allowed positions.
+	 *	Start timing.
 	 */
-	if (env.landmarkNumber == 0)
+	if (arguments.common.isTimingEnabled)
 	{
-		addLandmark(&env, (env.positionMin + env.positionMax) / 2);
+		start = clock();
 	}
 
 	/*
-	 *	Print what does not change.
+	 *	Dispatch to the mode-specific kernel. The Monte Carlo loop lives
+	 *	inside `calculateOutputMonteCarlo`; UxHw mode runs a
+	 *	single distributional evaluation inside
+	 *	`calculateOutputUxHw`.
 	 */
-	if (!svgMode)
+	if (arguments.common.isMonteCarloMode)
 	{
-		printf("Speed: %f\n", system.speed);
-		for (size_t i = 0; i < getNumberOfLandmarks(&env); i++)
-		{
-			printf("Landmark at %f\n", getLandmarkPosition(&env, i));
-		}
+		calculateOutputMonteCarlo(
+			&arguments.kernelParameters,
+			arguments.common.numberOfMonteCarloIterations,
+			outputVariables,
+			monteCarloOutputSamples
+		);
+
+		/*
+		 *	If not doing UxHw version, then approximate the cost of the third phase of
+		 *	Monte Carlo (post-processing), by calculating the mean and variance.
+		 */
+		meanAndVariance = calculateMeanAndVarianceOfDoubleSamples(monteCarloOutputSamples, arguments.common.numberOfMonteCarloIterations);
+		outputVariables[arguments.common.outputSelect] = meanAndVariance.mean;
 	}
 	else
 	{
-		plotHeader(outputFile, &env, &model, &system);
+		calculateOutputUxHw(
+			&arguments.kernelParameters,
+			outputVariables,
+			monteCarloOutputSamples
+		);
 	}
 
 	/*
-	 *	Main computational loop
+	 *	Stop timing.
 	 */
-	while (	(system.position > env.positionMin) &&
-		(system.position < env.positionMax) &&
-		(steps < arguments.maxNumberOfSteps))
+	if (arguments.common.isTimingEnabled)
 	{
-		float sensorReading;
-
-		/*
-		 *	Print the system and filter state.
-		 */
-		if (!svgMode)
-		{
-			printf("\n# Step %zu\n", steps);
-			printf("position's prior: %f\n", estimatedPosition);
-		}
-		else
-		{
-			plotFrameBeforeBL(outputFile, &env, &system, steps, estimatedPosition);
-		}
-
-		/*
-		 *	Get a reading from the sensor.
-		 */
-		sensorReading = sense(&system, &model, &env);
-
-		/*
-		 *	Apply Bayes-Laplace rule with the new observation to better estimate the state.
-		 */
-		sensorModelArgs.m = &model;
-		sensorModelArgs.env = &env;
-		estimatedPosition = UxHwFloatBayesLaplace(
-			&sensorModelEvidence,
-			(void *)(&sensorModelArgs),
-			estimatedPosition,
-			sensorReading,
-			1);
-
-		/*
-		 *	Print the system and filter state.
-		 */
-		if (!svgMode)
-		{
-			printf("position: %f\n", system.position);
-			printf("estimated position: %f\n", estimatedPosition);
-			printf("1st moment of the estimated position: %f\n",
-			       UxHwFloatNthMoment(estimatedPosition, 1));
-		}
-		else
-		{
-			plotFrameAfterBL(outputFile, &env, &model, &system, steps, estimatedPosition, sensorReading);
-		}
-
-		/*
-		 *	Update the system's position by simulating the motion.
-		 */
-		move(&system);
-
-		/*
-		 *	Update the estimated position using a model of the system's motion.
-		 */
-		estimatedPosition = moveModel(&model, estimatedPosition);
-
-		steps++;
+		end                 = clock();
+		cpuTimeInClockTicks = end - start;
 	}
 
-	if (svgMode)
+	/*
+	 *	Print the results (either in JSON or standard output format).
+	 */
+	if (arguments.common.isOutputJSONMode)
 	{
-		plotFooter(outputFile);
+		printJSONFormattedOutput(
+			&arguments.common,
+			monteCarloOutputSamples,
+			outputVariables,
+			outputVariableDescriptions,
+			kParticleFilterOutputVariableIndexMax,
+			applicationDescription,
+			outputVariableTypes
+		);
+	}
+	else
+	{
+		printHumanConsumableOutput(
+			&arguments.common,
+			kParticleFilterOutputVariableIndexMax,
+			outputVariables,
+			outputVariableNames,
+			outputVariableDescriptions,
+			monteCarloOutputSamples,
+			outputVariableTypes
+		);
 	}
 
+	/*
+	 *	Print timing result.
+	 */
+	if (arguments.common.isTimingEnabled)
+	{
+		printf("\nCPU time used: %"SignaloidParticleModifier"lf seconds\n", ((double) cpuTimeInClockTicks) / CLOCKS_PER_SEC);
+	}
+
+#ifndef NO_OS_AVAILABLE
+
+	/*
+	 *	Write output data.
+	 */
 	if (arguments.common.isWriteToFileEnabled)
 	{
-		fclose(outputFile);
+		if (writeOutputDoubleDistributionsToCSV(
+				arguments.common.outputFilePath,
+				outputVariables,
+				outputVariableNames,
+				kParticleFilterOutputVariableIndexMax
+		))
+		{
+			free(monteCarloOutputSamples);
+			free(trace.steps);
+
+			return kCommonConstantReturnTypeError;
+		}
 	}
 
+	/*
+	 *	Render the run as an SVG, if one was asked for.
+	 */
+	if (arguments.svgOutputFilePath != NULL)
+	{
+		if (writeRunAsSVG(arguments.svgOutputFilePath, &arguments.kernelParameters, &trace) != kCommonConstantReturnTypeSuccess)
+		{
+			free(monteCarloOutputSamples);
+			free(trace.steps);
+
+			return kCommonConstantReturnTypeError;
+		}
+	}
+#endif
+
+	/*
+	 *	Save Monte carlo outputs in an output file.
+	 */
+	if (arguments.common.isMonteCarloMode)
+	{
+		saveMonteCarloDoubleDataToDataDotOutFile(
+			monteCarloOutputSamples, ((uint64_t) cpuTimeInClockTicks) * 1000000 / CLOCKS_PER_SEC,
+			arguments.common.numberOfMonteCarloIterations
+		);
+	}
+
+	/*
+	 *	Free dynamically-allocated memory. `monteCarloOutputSamples` is
+	 *	always allocated (even in UxHw mode, to hold the single
+	 *	distributional result), so it is always freed here. `trace.steps` is
+	 *	NULL unless an SVG was asked for, and `free(NULL)` is a no-op.
+	 */
+	free(monteCarloOutputSamples);
+	free(trace.steps);
+
+#ifdef NO_OS_AVAILABLE
+	returnZeroNoOS();
+#else
+
 	return 0;
+
+#endif
 }
