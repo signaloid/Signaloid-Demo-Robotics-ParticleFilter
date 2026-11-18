@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2022-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,8 @@
  *	@param	env	: The pointer to the environment
  *	@return size_t	: Returns the number of landmarks in the environment
  */
-size_t	getNumberOfLandmarks(Environment *  env);
+size_t
+getNumberOfLandmarks(Environment * env);
 
 /**
  *	@brief	Add new landmarks to the environment
@@ -39,7 +40,8 @@ size_t	getNumberOfLandmarks(Environment *  env);
  *	@param	env		: The pointer to the environment
  *	@param	position	: The position of the new landmark to add
  */
-void	addLandmark(Environment *  env, float position);
+void
+addLandmark(Environment * env, float position);
 
 /**
  *	@brief	Get a landmark's position (what the sensor picks up)
@@ -48,4 +50,5 @@ void	addLandmark(Environment *  env, float position);
  *	@param	index	: The index of the landmark
  *	@return float	: Returns the position of the specified landmark
  */
-float	getLandmarkPosition(Environment *  env, size_t index);
+float
+getLandmarkPosition(Environment * env, size_t index);

@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2022-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -31,20 +31,20 @@
 
 typedef enum
 {
-	nbBuckets = 64,
-	gradientSteps = 32,
-	svgWidth = 800,
-	svgHeader = 150,
-	svgFrameHeight = 275,
-	textOffsetX = 10,
-	textOffsetY = 25,
-	carWidth = 40,
-	carHeight = 20,
-	landmarkRadius = 5,
-	distributionHeight = 50,
-	distributionOffset = 25,
-	sensorAlphaRatio = 2,
-	buffer = 50
+	nbBuckets           = 64,
+	gradientSteps       = 32,
+	svgWidth            = 800,
+	svgHeader           = 150,
+	svgFrameHeight      = 275,
+	textOffsetX         = 10,
+	textOffsetY         = 25,
+	carWidth            = 40,
+	carHeight           = 20,
+	landmarkRadius      = 5,
+	distributionHeight  = 50,
+	distributionOffset  = 25,
+	sensorAlphaRatio    = 2,
+	buffer              = 50
 } Layout;
 
 /**
@@ -55,7 +55,7 @@ typedef enum
  *	@return float		: The relative X-coordinate.
  */
 static float
-positionToX(Environment *  env, float position)
+positionToX(Environment * env, float position)
 {
 	return (position - env->positionMin) / (env->positionMax - env->positionMin) * svgWidth;
 }
@@ -70,7 +70,7 @@ positionToX(Environment *  env, float position)
  *	@param	class	: The class field of the element.
  */
 static void
-text(FILE *  stream, float x, float y, const char * txt, const char *  class)
+text(FILE * stream, float x, float y, const char * txt, const char *  class)
 {
 	fprintf(
 		stream,
@@ -80,7 +80,8 @@ text(FILE *  stream, float x, float y, const char * txt, const char *  class)
 		x,
 		y,
 		class,
-		txt);
+		txt
+	);
 
 	return;
 }
@@ -96,7 +97,7 @@ text(FILE *  stream, float x, float y, const char * txt, const char *  class)
  *	@param	class	: The class field of the element.
  */
 static void
-line(FILE *  stream, float x1, float y1, float x2, float y2, const char *  class)
+line(FILE * stream, float x1, float y1, float x2, float y2, const char *  class)
 {
 	fprintf(
 		stream,
@@ -108,7 +109,8 @@ line(FILE *  stream, float x1, float y1, float x2, float y2, const char *  class
 		y1,
 		x2,
 		y2,
-		class);
+		class
+	);
 
 	return;
 }
@@ -124,7 +126,7 @@ line(FILE *  stream, float x1, float y1, float x2, float y2, const char *  class
  *	@param	class	: The class field of the element.
  */
 static void
-rect(FILE *  stream, float x, float y, float width, float height, const char *  class)
+rect(FILE * stream, float x, float y, float width, float height, const char *  class)
 {
 	fprintf(
 		stream,
@@ -136,7 +138,8 @@ rect(FILE *  stream, float x, float y, float width, float height, const char *  
 		y,
 		width,
 		height,
-		class);
+		class
+	);
 
 	return;
 }
@@ -151,7 +154,7 @@ rect(FILE *  stream, float x, float y, float width, float height, const char *  
  *	@param	class	: The class field of the element.
  */
 static void
-circle(FILE *  stream, float cx, float cy, float r, const char *  class)
+circle(FILE * stream, float cx, float cy, float r, const char *  class)
 {
 	fprintf(
 		stream,
@@ -161,7 +164,8 @@ circle(FILE *  stream, float cx, float cy, float r, const char *  class)
 		cx,
 		cy,
 		r,
-		class);
+		class
+	);
 
 	return;
 }
@@ -174,7 +178,7 @@ circle(FILE *  stream, float cx, float cy, float r, const char *  class)
  *	@return	float	: Returns the position of the bucket start.
  */
 static float
-bucketStart(Environment *  env, unsigned int index)
+bucketStart(Environment * env, unsigned int index)
 {
 	return env->positionMin + (env->positionMax - env->positionMin) / nbBuckets * index;
 }
@@ -187,7 +191,7 @@ bucketStart(Environment *  env, unsigned int index)
  *	@return	float	: Returns the position of the bucket end.
  */
 static float
-bucketEnd(Environment *  env, unsigned int index)
+bucketEnd(Environment * env, unsigned int index)
 {
 	return bucketStart(env, index + 1);
 }
@@ -204,37 +208,38 @@ bucketEnd(Environment *  env, unsigned int index)
  */
 static void
 distribution(
-	FILE *		stream,
-	Environment *	env,
-	float		x,
-	float		y,
-	float		dist,
-	const char *	class)
+	FILE *          stream,
+	Environment *   env,
+	float           x,
+	float           y,
+	float           dist,
+	const char *    class)
 {
-	float  boundaries[nbBuckets + 1];
-	float  density[nbBuckets];
-	float  maxDensity = 0;
-	float  mass;
-	float  plotStart;
-	float  plotEnd;
-	float  plotHeight;
-	size_t i;
+	float   boundaries[nbBuckets + 1];
+	float   density[nbBuckets];
+	float   maxDensity = 0;
+	float   mass;
+	float   plotStart;
+	float   plotEnd;
+	float   plotHeight;
+	size_t  i;
 
 	boundaries[0] = bucketStart(env, 0);
+
 	for (i = 0; i < nbBuckets; i++)
 	{
-		boundaries[i + 1] = bucketEnd(env, i);
-		mass = UxHwFloatProbabilityGT(dist, boundaries[i]) -
-			UxHwFloatProbabilityGT(dist, boundaries[i + 1]);
-		density[i] = mass / (env->positionMax - env->positionMin) * nbBuckets;
-		maxDensity = fmax(maxDensity, density[i]);
+		boundaries[i + 1]   = bucketEnd(env, i);
+		mass                = UxHwFloatProbabilityGT(dist, boundaries[i]) -
+		                      UxHwFloatProbabilityGT(dist, boundaries[i + 1]);
+		density[i]  = mass / (env->positionMax - env->positionMin) * nbBuckets;
+		maxDensity  = fmax(maxDensity, density[i]);
 	}
 
 	for (i = 0; i < nbBuckets; i++)
 	{
-		plotStart = x + positionToX(env, boundaries[i]);
-		plotEnd = x + positionToX(env, boundaries[i + 1]);
-		plotHeight = density[i] / maxDensity * distributionHeight;
+		plotStart   = x + positionToX(env, boundaries[i]);
+		plotEnd     = x + positionToX(env, boundaries[i + 1]);
+		plotHeight  = density[i] / maxDensity * distributionHeight;
 		rect(stream, plotStart, y - plotHeight, plotEnd - plotStart, plotHeight, class);
 	}
 
@@ -251,7 +256,7 @@ distribution(
  *	@param	position	: The position of the car
  */
 static void
-systemSchema(FILE *  stream, Environment *  env, float x, float y, float position)
+systemSchema(FILE * stream, Environment *  env, float x, float y, float position)
 {
 	size_t i;
 
@@ -263,23 +268,27 @@ systemSchema(FILE *  stream, Environment *  env, float x, float y, float positio
 	/*
 	 *	show the car
 	 */
-	rect(stream,
+	rect(
+		stream,
 		x + positionToX(env, position) - carWidth / 2,
 		y - carHeight / 2,
 		carWidth,
 		carHeight,
-		"car");
+		"car"
+	);
 
 	/*
 	 *	show the landmarks
 	 */
 	for (i = 0; i < getNumberOfLandmarks(env); i++)
 	{
-		circle(stream,
+		circle(
+			stream,
 			positionToX(env, getLandmarkPosition(env, i)),
 			y + carHeight,
 			landmarkRadius,
-			"landmark");
+			"landmark"
+		);
 	}
 
 	return;
@@ -288,9 +297,9 @@ systemSchema(FILE *  stream, Environment *  env, float x, float y, float positio
 void
 plotHeader(FILE * stream, Environment *  env, Model *  model, System *  system)
 {
-	float systemY;
-	float distributionY;
-	float speedX;
+	float   systemY;
+	float   distributionY;
+	float   speedX;
 
 	/*
 	 *	SVG header
@@ -301,7 +310,8 @@ plotHeader(FILE * stream, Environment *  env, Model *  model, System *  system)
 		"<svg width=\"%d\" height=\"%d\" version=\"1.2\" "
 		"xmlns=\"http://www.w3.org/2000/svg\">\n",
 		svgWidth,
-		svgHeader + kPlotConstantsMaxFilterSteps * svgFrameHeight);
+		svgHeader + kPlotConstantsMaxFilterSteps * svgFrameHeight
+	);
 	/*
 	 *	style definitions
 	 */
@@ -318,7 +328,8 @@ plotHeader(FILE * stream, Environment *  env, Model *  model, System *  system)
 		".posterior { stroke: none; fill: #33A333; fill-opacity: 0.8; }\n"
 		".frameOdd { stroke: none; fill: white; fill-opacity: 0.4; }\n"
 		".frameEven { stroke: none; fill: gray; fill-opacity: 0.4; }\n"
-		"</style>\n");
+		"</style>\n"
+	);
 	/*
 	 *	show info
 	 */
@@ -346,7 +357,8 @@ plotHeader(FILE * stream, Environment *  env, Model *  model, System *  system)
 		distributionY,
 		speedX,
 		distributionY - distributionHeight,
-		"lineFirebrick");
+		"lineFirebrick"
+	);
 	fprintf(stream, "</g>\n");
 
 	return;
@@ -354,22 +366,24 @@ plotHeader(FILE * stream, Environment *  env, Model *  model, System *  system)
 
 void
 plotFrameBeforeBL(
-	FILE *		stream,
-	Environment *	env,
-	System *	system,
-	size_t		frame,
-	float		priorPosition)
+	FILE *          stream,
+	Environment *   env,
+	System *        system,
+	size_t          frame,
+	float           priorPosition)
 {
-	char  str[buffer];
-	float systemY;
-	float distributionY;
+	char    str[buffer];
+	float   systemY;
+	float   distributionY;
 
 	fprintf(
 		stream,
 		"<g id=\"frame%zu\" transform=\"translate(%d,%zu)\">\n",
 		frame,
 		0,
-		svgHeader + svgFrameHeight * frame);
+		svgHeader + svgFrameHeight * frame
+	);
+
 	if (frame % 2 == 0)
 	{
 		rect(stream, 0, 0, svgWidth, svgFrameHeight, "frameEven");
@@ -390,83 +404,91 @@ plotFrameBeforeBL(
 		2 * textOffsetX,
 		distributionY - distributionHeight / 4,
 		"Prior knowledge",
-		"subText");
+		"subText"
+	);
 
 	return;
 }
 
 void
 plotFrameAfterBL(
-	FILE *		stream,
-	Environment *	env,
-	Model *		model,
-	System *	system,
-	size_t 		frame,
-	float		estimatedPosition,
-	float 		sensorReading)
+	FILE *          stream,
+	Environment *   env,
+	Model *         model,
+	System *        system,
+	size_t          frame,
+	float           estimatedPosition,
+	float           sensorReading)
 {
-	int   i;
-	float systemY;
-	float distributionY;
-	float positionX;
-	float sensorDist;
-	float boundaries[gradientSteps + 1];
-	float density[gradientSteps];
-	float maxDensity;
-	float mass;
-	float offset;
-	float alpha;
+	int     i;
+	float   systemY;
+	float   distributionY;
+	float   positionX;
+	float   sensorDist;
+	float   boundaries[gradientSteps + 1];
+	float   density[gradientSteps];
+	float   maxDensity;
+	float   mass;
+	float   offset;
+	float   alpha;
 
 	/*
 	 *	estimated position
 	 */
-	systemY = svgFrameHeight / 4 * 3;
-	distributionY = systemY - distributionOffset;
+	systemY         = svgFrameHeight / 4 * 3;
+	distributionY   = systemY - distributionOffset;
 	distribution(stream, env, 0, distributionY, estimatedPosition, "posterior");
 	text(
 		stream,
 		2 * textOffsetX,
 		distributionY - distributionHeight / 4,
 		"Estimated position",
-		"subText");
+		"subText"
+	);
 
 	/*
 	 *	sensor distribution as gradient
 	 */
 	fprintf(stream, "<linearGradient id=\"gradient%zu\">\n", frame);
-	sensorDist = sensorModel(model, env, system->position);
-	maxDensity = 0;
-	boundaries[0] = 0;
+	sensorDist      = sensorModel(model, env, system->position);
+	maxDensity      = 0;
+	boundaries[0]   = 0;
+
 	for (i = 0; i < gradientSteps; i++)
 	{
-		boundaries[i + 1] = ((env->positionMax - env->positionMin) * (i + 1)) / gradientSteps;
-		mass =	UxHwFloatProbabilityGT(sensorDist, boundaries[i]) -
-			UxHwFloatProbabilityGT(sensorDist, boundaries[i + 1]);
-		density[i] = mass / (env->positionMax - env->positionMin) * gradientSteps;
-		maxDensity = fmax(maxDensity, density[i]);
+		boundaries[i + 1]   = ((env->positionMax - env->positionMin) * (i + 1)) / gradientSteps;
+		mass                = UxHwFloatProbabilityGT(sensorDist, boundaries[i]) -
+		                      UxHwFloatProbabilityGT(sensorDist, boundaries[i + 1]);
+		density[i]  = mass / (env->positionMax - env->positionMin) * gradientSteps;
+		maxDensity  = fmax(maxDensity, density[i]);
 	}
+
 	for (i = gradientSteps - 1; i >= 0; i--)
 	{
-		offset = (50.0f * i) / (gradientSteps - 1);
-		alpha = density[i] / maxDensity / sensorAlphaRatio;
+		offset  = (50.0f * i) / (gradientSteps - 1);
+		alpha   = density[i] / maxDensity / sensorAlphaRatio;
 		fprintf(
 			stream,
 			"<stop offset=\"%"SignaloidParticleModifier"f%%\""
 			" stop-color=\"blue\" stop-opacity=\"%"SignaloidParticleModifier"f\" />\n",
 			50 - offset,
-			alpha);
+			alpha
+		);
 	}
+
 	for (i = 1; i < gradientSteps; i++)
 	{
-		offset = (50.0f * i) / (gradientSteps - 1);
-		alpha = density[i] / maxDensity / sensorAlphaRatio;
+		offset  = (50.0f * i) / (gradientSteps - 1);
+		alpha   = density[i] / maxDensity / sensorAlphaRatio;
 		fprintf(
 			stream,
 			"<stop offset=\"%"SignaloidParticleModifier"f%%\""
 			" stop-color=\"blue\" stop-opacity=\"%"SignaloidParticleModifier"f\" />\n",
 			50 + offset,
-			alpha);
+			alpha
+		);
 	}
+
 	fprintf(stream, "</linearGradient>\n");
 	fprintf(
 		stream,
@@ -477,7 +499,8 @@ plotFrameAfterBL(
 		systemY,
 		2 * svgWidth,
 		carHeight,
-		frame);
+		frame
+	);
 
 	/*
 	 *	Sensor reading

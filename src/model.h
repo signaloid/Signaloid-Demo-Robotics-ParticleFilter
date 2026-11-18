@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2022-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,8 @@
  *	@param	model	: The pointer to the model
  *	@return float	: The speed distribution
  */
-float	speedDistribution(Model *  model);
+float
+speedDistribution(Model * model);
 
 /**
  *	@brief	Sensor model for the Bayes-Laplace rule.
@@ -40,7 +41,8 @@ float	speedDistribution(Model *  model);
  *	@param	position	: The current position
  *	@return float		: Returns N(position, sensorStdCoeff * position).
  */
-float	sensorModel(Model *  model, Environment *  env, float position);
+float
+sensorModel(Model * model, Environment *  env, float position);
 
 /**
  *	@brief	Model of the motion used by the filter
@@ -49,4 +51,5 @@ float	sensorModel(Model *  model, Environment *  env, float position);
  *	@param	position	: The current position
  *	@return float		: Returns the new position after applying the speedDistribution
  */
-float	moveModel(Model *  model, float position);
+float
+moveModel(Model * model, float position);
