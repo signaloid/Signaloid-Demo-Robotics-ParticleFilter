@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2022-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
  *	To make sure the sensor model agrees with the sensor, simply sample from the model
  */
 float
-sense(System *  system, Model *  model, Environment *  env)
+sense(System * system, Model *  model, Environment *  env)
 {
 	float dist = sensorModel(model, env, system->position);
 
@@ -36,7 +36,7 @@ sense(System *  system, Model *  model, Environment *  env)
 }
 
 void
-move(System *  system)
+move(System * system)
 {
 	system->position += system->speed;
 

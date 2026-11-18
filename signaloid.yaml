@@ -1,9 +1,20 @@
 MinimumCore:
-    Microarchitecture: Athens
-    CorrelationTracking: Autocorrelation
+    Microarchitecture: Rome
+    DependencyTracking: None
     MemorySize: 256000
 
 TraceVariables:
     - File: "main.c"
-      LineNumber: 48
-      Expression: "estimatedPosition"
+
+      LineNumber: 52
+
+      Expression: "outputVariables[0:0]"
+
+BenchmarkingVariables:
+    - VariableName: outputVariables[0]
+      VariableDescription: Estimated position of the robot along the rail, after the last filter step.
+      OutputObject: Distribution
+      CommandLineArguments: -S 0
+
+BenchmarkingAllOutputs:
+    - CommandLineArguments: -S 1
