@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2024-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,13 @@
 
 #include <stddef.h>
 
-#define kEnvironmentConstantDefaultPositionMin	(-10.0)
-#define kEnvironmentConstantDefaultPositionMax	(10.0)
+#define kEnvironmentConstantDefaultPositionMin  (-10.0)
+#define kEnvironmentConstantDefaultPositionMax  (10.0)
 
 typedef enum
 {
-	kEnvironmentConstantMaxLandmarks		= 128,
-	kEnvironmentConstantDefaultLandmarkNumber 	= 0,
+	kEnvironmentConstantMaxLandmarks            = 128,
+	kEnvironmentConstantDefaultLandmarkNumber   = 0,
 } EnvironmentConstant;
 
 typedef struct Environment
@@ -38,52 +38,52 @@ typedef struct Environment
 	/*
 	 *	Minimal possible position
 	 */
-	float	positionMin;
+	float   positionMin;
 	/*
 	 *	Maximal possible position
 	 */
-	float	positionMax;
-	size_t	landmarkNumber;
-	float	landmarkPositions[kEnvironmentConstantMaxLandmarks];
+	float   positionMax;
+	size_t  landmarkNumber;
+	float   landmarkPositions[kEnvironmentConstantMaxLandmarks];
 } Environment;
 
-#define kModelConstantDefaultSpeedExpected	(1.0)
-#define kModelConstantDefaultSpeedStd		(0.5)
-#define kModelConstantDefaultSensorStdCoeff	(0.5)
+#define kModelConstantDefaultSpeedExpected  (1.0)
+#define kModelConstantDefaultSpeedStd       (0.5)
+#define kModelConstantDefaultSensorStdCoeff (0.5)
 
 typedef struct Model
 {
 	/*
 	 *	The expected value for the speed
 	 */
-	float	speedExpected;
+	float   speedExpected;
 	/*
 	 *	The standard deviation for the speed
 	 */
-	float	speedStd;
+	float   speedStd;
 	/*
 	 *	The standard deviation of the sensor noise depends on the position.
 	 *	There is more noise on the readings of landmarks further away.
 	 */
-	float	sensorStdCoeff;
+	float sensorStdCoeff;
 } Model;
 
-#define kSystemConstantsDefaultPosition	(0.0)
-#define kSystemConstantsDefaultSpeed	(1.0)
+#define kSystemConstantsDefaultPosition (0.0)
+#define kSystemConstantsDefaultSpeed    (1.0)
 
 typedef struct System
 {
 	/*
 	 *	State of the system (particle)
 	 */
-	float	position;
+	float   position;
 	/*
 	 *	The actual speed.
 	 */
-	float	speed;
+	float   speed;
 } System;
 
 typedef enum
 {
-	kPlotConstantsMaxFilterSteps	= 5,
+	kPlotConstantsMaxFilterSteps = 5,
 } PlotConstants;

@@ -1,7 +1,15 @@
 # Source code:
 
 ## main.c
-Implementation of the particle filter.
+Parses the command line, dispatches to one of the two kernels, and prints the results.
+
+## kernel.c/h
+The particle filter kernel, plus the dispatch functions for each execution mode.
+
+## particle-filter-uxhw.c/h and particle-filter-monte-carlo.c/h
+The UxHw and Monte Carlo execution-mode kernels. The Monte Carlo kernel runs a plain
+particle filter with one particle per requested sample, because the native build has no
+`UxHwFloatBayesLaplace()`.
 
 ## environment.c/h
 Has information about the environment: the environment's bounds and the landmarks' position.

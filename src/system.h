@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2022-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -32,12 +32,13 @@
  *	@param	env	: Pointer to the environment struct
  *	@return float	: The sample read from the sensor
  */
-float	sense(System *  system, Model *  model, Environment *  env);
+float
+sense(System * system, Model *  model, Environment *  env);
 
 /**
  *	@brief	Simluates the motion of the system (updates the position)
  *
  *	@param	system	: Pointer to the system struct
  */
-void	move(System *  system);
-
+void
+move(System * system);
